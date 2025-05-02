@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firewall Rule Simulator</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 {
+            color: var(--secondary-color);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        table th, table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        table th {
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+        
+        table tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .table-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .table-actions button {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        
+        .matched-rule {
+            background-color: #fff9c4 !important;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .result-allowed {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+            border: 1px solid #2ecc71;
+        }
+        
+        .result-denied {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+            border: 1px solid #e74c3c;
+        }
+        
+        .card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background-color: var(--light-color);
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .card-header h3 {
+            margin: 0;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .button-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .table-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Firewall Rule Simulator</h1>
+        
+        <!-- Rule Creation Section -->
+        <div class="card section">
+            <div class="card-header">
+                <h3>Rule Creation</h3>
+            </div>
+            <div class="card-body">
+                <form id="ruleForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="protocol">Protocol:</label>
+                            <select id="protocol" required>
+                                <option value="TCP">TCP</option>
+                                <option value="UDP">UDP</option>
+                                <option value="ICMP">ICMP</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="sourceIP">Source IP:</label>
+                            <input type="text" id="sourceIP" placeholder="e.g. 192.168.1.1 or any" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="destIP">Destination IP:</label>
+                            <input type="text" id="destIP" placeholder="e.g. 10.0.0.1 or any" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="port">Port:</label>
+                            <input type="text" id="port" placeholder="e.g. 80 or any" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="action">Action:</label>
+                            <select id="action" required>
+                                <option value="Allow">Allow</option>
+                                <option value="Deny">Deny</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="button-row">
+                        <button type="submit" class="btn btn-primary">Add Rule</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Rules Management Table Section -->
+        <div class="card section">
+            <div class="card-header">
+                <h3>Rules Management</h3>
+            </div>
+            <div class="card-body">
+                <div id="rulesTableContainer">
+                    <table id="rulesTable">
+                        <thead>
+                            <tr>
+                                <th>Rule #</th>
+                                <th>Protocol</th>
+                                <th>Source IP</th>
+                                <th>Destination IP</th>
+                                <th>Port</th>
+                                <th>Action</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rulesTableBody">
+                            <!-- Rules will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="button-row">
+                    <button id="downloadRules" class="btn btn-secondary">Download Rules</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Packet Simulation Section -->
+        <div class="card section">
+            <div class="card-header">
+                <h3>Packet Simulation</h3>
+            </div>
+            <div class="card-body">
+                <form id="packetForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="packetProtocol">Protocol:</label>
+                            <select id="packetProtocol" required>
+                                <option value="TCP">TCP</option>
+                                <option value="UDP">UDP</option>
+                                <option value="ICMP">ICMP</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="packetSourceIP">Source IP:</label>
+                            <input type="text" id="packetSourceIP" placeholder="e.g. 192.168.1.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="packetDestIP">Destination IP:</label>
+                            <input type="text" id="packetDestIP" placeholder="e.g. 10.0.0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="packetPort">Port:</label>
+                            <input type="text" id="packetPort" placeholder="e.g. 80" required>
+                        </div>
+                    </div>
+                    <div class="button-row">
+                        <button type="submit" class="btn btn-success">Simulate Packet</button>
+                    </div>
+                </form>
+                
+                <div id="simulationResult" style="display: none;" class="result">
+                    <!-- Simulation result will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Store all rules in an array
+        let firewallRules = [];
+        
+        // DOM elements
+        const ruleForm = document.getElementById('ruleForm');
+        const rulesTableBody = document.getElementById('rulesTableBody');
+        const packetForm = document.getElementById('packetForm');
+        const simulationResult = document.getElementById('simulationResult');
+        const downloadRulesBtn = document.getElementById('downloadRules');
+        
+        // Add Rule Form Submission
+        ruleForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form values
+            const protocol = document.getElementById('protocol').value;
+            const sourceIP = document.getElementById('sourceIP').value;
+            const destIP = document.getElementById('destIP').value;
+            const port = document.getElementById('port').value;
+            const action = document.getElementById('action').value;
+            
+            // Validate inputs
+            if (!validateIPInput(sourceIP) || !validateIPInput(destIP)) {
+                alert('Please enter valid IP addresses or "any"');
+                return;
+            }
+            
+            if (!validatePortInput(port)) {
+                alert('Please enter a valid port number (1-65535) or "any"');
+                return;
+            }
+            
+            // Create new rule object
+            const newRule = {
+                protocol,
+                sourceIP,
+                destIP,
+                port,
+                action
+            };
+            
+            // Add rule to array
+            firewallRules.push(newRule);
+            
+            // Update the rules table
+            updateRulesTable();
+            
+            // Reset form
+            ruleForm.reset();
+        });
+        
+        // Validate IP input
+        function validateIPInput(ip) {
+            if (ip.toLowerCase() === 'any') return true;
+            
+            // Simple IP validation regex
+            const ipPattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+            if (!ipPattern.test(ip)) return false;
+            
+            // Check each octet is between 0-255
+            const octets = ip.split('.');
+            for (let octet of octets) {
+                const num = parseInt(octet);
+                if (num < 0 || num > 255) return false;
+            }
+            
+            return true;
+        }
+        
+        // Validate port input
+        function validatePortInput(port) {
+            if (port.toLowerCase() === 'any') return true;
+            
+            const portNum = parseInt(port);
+            return !isNaN(portNum) && portNum >= 1 && portNum <= 65535;
+        }
+        
+        // Update the rules table
+        function updateRulesTable() {
+            // Clear existing table rows
+            rulesTableBody.innerHTML = '';
+            
+            // Add each rule to the table
+            firewallRules.forEach((rule, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${rule.protocol}</td>
+                    <td>${rule.sourceIP}</td>
+                    <td>${rule.destIP}</td>
+                    <td>${rule.port}</td>
+                    <td>${rule.action}</td>
+                    <td class="table-actions">
+                        <button class="btn btn-secondary move-up" ${index === 0 ? 'disabled' : ''}>Move Up</button>
+                        <button class="btn btn-secondary move-down" ${index === firewallRules.length - 1 ? 'disabled' : ''}>Move Down</button>
+                        <button class="btn btn-danger delete">Delete</button>
+                    </td>
+                `;
+                
+                // Add event listeners to the action buttons
+                const moveUpBtn = row.querySelector('.move-up');
+                const moveDownBtn = row.querySelector('.move-down');
+                const deleteBtn = row.querySelector('.delete');
+                
+                moveUpBtn.addEventListener('click', () => moveRule(index, 'up'));
+                moveDownBtn.addEventListener('click', () => moveRule(index, 'down'));
+                deleteBtn.addEventListener('click', () => deleteRule(index));
+                
+                rulesTableBody.appendChild(row);
+            });
+        }
+        
+        // Move rule up or down
+        function moveRule(index, direction) {
+            if (direction === 'up' && index > 0) {
+                // Swap with previous rule
+                [firewallRules[index], firewallRules[index - 1]] = [firewallRules[index - 1], firewallRules[index]];
+            } else if (direction === 'down' && index < firewallRules.length - 1) {
+                // Swap with next rule
+                [firewallRules[index], firewallRules[index + 1]] = [firewallRules[index + 1], firewallRules[index]];
+            }
+            
+            // Update table
+            updateRulesTable();
+        }
+        
+        // Delete rule
+        function deleteRule(index) {
+            // Remove rule from array
+            firewallRules.splice(index, 1);
+            
+            // Update table
+            updateRulesTable();
+        }
+        
+        // Simulate packet
+        packetForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get packet details
+            const protocol = document.getElementById('packetProtocol').value;
+            const sourceIP = document.getElementById('packetSourceIP').value;
+            const destIP = document.getElementById('packetDestIP').value;
+            const port = document.getElementById('packetPort').value;
+            
+            // Validate inputs
+            if (!validateIPInput(sourceIP) || !validateIPInput(destIP)) {
+                alert('Please enter valid IP addresses');
+                return;
+            }
+            
+            if (!validatePortInput(port)) {
+                alert('Please enter a valid port number (1-65535)');
+                return;
+            }
+            
+            // Create packet object
+            const packet = {
+                protocol,
+                sourceIP,
+                destIP,
+                port
+            };
+            
+            // Simulate firewall evaluation
+            simulateFirewall(packet);
+        });
+        
+        // Simulate firewall evaluation against rules
+        function simulateFirewall(packet) {
+            // Clear previous match highlighting
+            const rows = rulesTableBody.querySelectorAll('tr');
+            rows.forEach(row => row.classList.remove('matched-rule'));
+            
+            // Default action is to deny
+            let finalAction = 'Deny';
+            let matchedRuleIndex = -1;
+            
+            // Check each rule in order
+            for (let i = 0; i < firewallRules.length; i++) {
+                const rule = firewallRules[i];
+                
+                // Check if packet matches rule
+                if (
+                    (rule.protocol === packet.protocol || rule.protocol.toLowerCase() === 'any') &&
+                    (rule.sourceIP.toLowerCase() === 'any' || rule.sourceIP === packet.sourceIP) &&
+                    (rule.destIP.toLowerCase() === 'any' || rule.destIP === packet.destIP) &&
+                    (rule.port.toLowerCase() === 'any' || rule.port === packet.port)
+                ) {
+                    // Found a match
+                    finalAction = rule.action;
+                    matchedRuleIndex = i;
+                    break;
+                }
+            }
+            
+            // Highlight matched rule
+            if (matchedRuleIndex !== -1) {
+                rows[matchedRuleIndex].classList.add('matched-rule');
+            }
+            
+            // Display result
+            simulationResult.textContent = `Packet ${finalAction === 'Allow' ? 'ALLOWED' : 'DENIED'}`;
+            simulationResult.className = `result ${finalAction === 'Allow' ? 'result-allowed' : 'result-denied'}`;
+            simulationResult.style.display = 'block';
+            
+            // Scroll to result
+            simulationResult.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Download rules
+        downloadRulesBtn.addEventListener('click', function() {
+            if (firewallRules.length === 0) {
+                alert('No rules to download');
+                return;
+            }
+            
+            // Create a text content for the file
+            let content = 'Firewall Rules:\n\n';
+            
+            firewallRules.forEach((rule, index) => {
+                content += `Rule #${index + 1}\n`;
+                content += `Protocol: ${rule.protocol}\n`;
+                content += `Source IP: ${rule.sourceIP}\n`;
+                content += `Destination IP: ${rule.destIP}\n`;
+                content += `Port: ${rule.port}\n`;
+                content += `Action: ${rule.action}\n`;
+                content += '------------------------\n';
+            });
+            
+            // Create a blob and download link
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            // Create download link
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'firewall_rules.txt';
+            a.style.display = 'none';
+            
+            // Trigger download
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        });
+        
+        // Initialize table
+        updateRulesTable();
+    </script>
+</body>
+</html>
